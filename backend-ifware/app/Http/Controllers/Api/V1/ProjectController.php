@@ -3,52 +3,40 @@
 namespace App\Http\Controllers\Api\V1;
 
 use App\Http\Controllers\Controller;
-use Illuminate\Http\Request;
 use App\Models\Project;
+use Illuminate\Http\Request;
 
 class ProjectController extends Controller
 {
     /**
-     * Display a listing of the resource.
+     * Lista todos os projetos com seus relacionamentos e filtros.
      */
-    public function index()
+    public function index(Request $request)
     {
-        //
+        $projects = Project::with(['client', 'projectType'])
+            ->when($request->query('search'), function ($query, $search) {
+                $query->where('nomeProjeto', 'like', "%{$search}%")
+                      ->orWhereHas('client', function ($q) use ($search) {
+                          $q->where('nomeCliente', 'like', "%{$search}%");
+                      });
+            })
+            ->when($request->query('tipoProjetoId'), function ($query, $typeId) {
+                $query->where('tipoProjetoId', $typeId);
+            })
+            ->orderBy('created_at', 'desc')
+            ->get()
+            ->groupBy('client.nomeCliente'); // Agrupa os projetos pelo nome do cliente
+
+        return response()->json($projects);
     }
 
     /**
-     * Store a newly created resource in storage.
-     */
-    public function store(Request $request)
-    {
-        //
-    }
-
-    /**
-     * Display the specified resource.
+     * Mostra um projeto específico com suas tarefas e usuários atribuídos.
      */
     public function show(Project $project)
     {
-        $project->load(['columns.tasks' => function ($query) {
-            $query->orderBy('order', 'asc');
-        }]);
+        $project->load(['client', 'projectType', 'tasks.assignedUsers']);
 
         return response()->json($project);
-    }
-
-    /**
-     * Update the specified resource in storage.
-     */
-    public function update(Request $request, string $id)
-    {
-        //
-    }
-
-    /**
-     * Remove the specified resource from storage.
-     */
-    public function destroy(string $id)
-    {
-        //
     }
 }

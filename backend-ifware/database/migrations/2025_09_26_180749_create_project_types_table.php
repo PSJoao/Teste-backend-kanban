@@ -10,20 +10,19 @@ return new class extends Migration
      * Run the migrations.
      */
     public function up(): void
-{
-    Schema::create('columns', function (Blueprint $table) {
-        $table->id();
-        $table->string('name');
-        $table->foreignId('project_id')->constrained()->onDelete('cascade');
-        $table->timestamps();
-    });
-}
+    {
+        Schema::create('project_types', function (Blueprint $table) {
+            $table->id();
+            $table->string('nomeTipoProjeto')->unique();
+            $table->timestamps();
+        });
+    }
 
     /**
      * Reverse the migrations.
      */
     public function down(): void
     {
-        Schema::dropIfExists('columns');
+        Schema::dropIfExists('project_types');
     }
 };
